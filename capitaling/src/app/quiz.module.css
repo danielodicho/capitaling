@@ -7,6 +7,9 @@
   
   .flagContainer {
     /* Adjust as needed to properly display your flag */
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
   }
   
   .flagImage {

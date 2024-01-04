@@ -3,10 +3,17 @@ import styles from './quiz.module.css';
 import countriesData from '../data'; // Import the countries data
 
 export default function Quiz() {
+  const defaultCountryData = {
+    country: '',
+    capital: '',
+    flagImage: '',
+    similarCountries: [],
+    similarCapitals: []
+  };
   // States to track the user's selections
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedCapital, setSelectedCapital] = useState(null);
-  const [currentCountryData, setCurrentCountryData] = useState({});
+  const [currentCountryData, setCurrentCountryData] = useState(defaultCountryData);
   const [isCorrect, setIsCorrect] = useState(null); // null, true, or false
 
   // Assume the first country is the one to guess for simplicity
@@ -61,24 +68,24 @@ const checkAnswers = () => {
       </div>
       <div className={styles.optionsContainer}>
         <div className={styles.column}>
-          {countriesData.map((item) => (
+        {[currentCountryData.country, ...currentCountryData.similarCountries].map((country) => (
             <button
-              key={item.country}
-              className={`${styles.option} ${selectedCountry === item.country ? styles.selected : ''}`}
-              onClick={() => handleCountrySelect(item.country)}
+              key={country}
+              className={`${styles.option} ${selectedCountry === country ? styles.selected : ''}`}
+              onClick={() => handleCountrySelect(country)}
             >
-              {item.country}
+              {country}
             </button>
           ))}
         </div>
         <div className={styles.column}>
-          {countriesData.map((item) => (
+        {[currentCountryData.capital, ...currentCountryData.similarCapitals].map((capital) => (
             <button
-              key={item.capital}
-              className={`${styles.option} ${selectedCapital === item.capital ? styles.selected : ''}`}
-              onClick={() => handleCapitalSelect(item.capital)}
+              key={capital}
+              className={`${styles.option} ${selectedCapital === capital ? styles.selected : ''}`}
+              onClick={() => handleCapitalSelect(capital)}
             >
-              {item.capital}
+              {capital}
             </button>
           ))}
         </div>
