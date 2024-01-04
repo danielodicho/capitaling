@@ -1,0 +1,68 @@
+.container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .flagContainer {
+    /* Adjust as needed to properly display your flag */
+  }
+  
+  .flagImage {
+    width: 100%;
+    height: auto; /* maintain aspect ratio */
+  }
+  
+  .optionsContainer {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .option {
+    /* Add styles for your option buttons */
+    padding: 10px;
+    margin: 5px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    cursor: pointer;
+  }
+  .selected {
+    background-color: #add8e6; /* Light blue to indicate selection */
+  }
+  
+  .submitButton {
+    /* Styles for the submit button */
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #4caf50; /* Green background */
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .result {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 1.2em;
+    color: #ffffff;
+    background-color: #f44336; /* Red for incorrect */
+  }
+  
+/* ... other styles ... */
+
+.correct {
+    background-color: #4caf50; /* Green for correct */
+  }
+  
+  .incorrect {
+    background-color: #f44336; /* Red for incorrect */
+  }
+  
+  
+  
