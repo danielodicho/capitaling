@@ -92,30 +92,10 @@ const countriesData = [
       country: 'Poland',
       capital: 'Warsaw',
       flagImage: '/images/svg/pl.svg',
-        similarCountries: ['France', 'Spain', 'Germany'],
-        similarCapitals: ['Paris', 'Madrid', 'Berlin']
+      similarCountries: ['Monaco', 'Malta', 'Indonesia'],
+      similarCapitals: ['Monaco', 'Valletta', 'Jakarta']
     },
-    {
-      country: 'Romania',
-      capital: 'Bucharest',
-      flagImage: '/images/svg/ro.svg',
-        similarCountries: ['France', 'Spain', 'Germany'],
-        similarCapitals: ['Paris', 'Madrid', 'Berlin']
-    },
-    {
-      country: 'Belgium',
-      capital: 'Brussels',
-      flagImage: '/images/svg/be.svg',
-        similarCountries: ['France', 'Spain', 'Germany'],
-        similarCapitals: ['Paris', 'Madrid', 'Berlin']
-    },
-    {
-      country: 'Czech Republic',
-      capital: 'Prague',
-      flagImage: '/images/svg/cz.svg',
-        similarCountries: ['France', 'Spain', 'Germany'],
-        similarCapitals: ['Paris', 'Madrid', 'Berlin']
-    },
+    
   ];
 
   
