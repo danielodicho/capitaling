@@ -1,21 +1,12 @@
 "use client";
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
-import countriesData from "../../data"; // Import the countries data
-import styles from "./quiz.module.css";
-
-type CountryData = {
-	country: string;
-	capital: string;
-	flagImage: string;
-	similarCountries: string[];
-	similarCapitals: string[];
-};
+import countriesData, { CountryData } from "../../data"; // Import the countries data
 
 export default function Quiz({ defaultCountryData }: { defaultCountryData: CountryData }) {
 	// States to track the user's selections
-	const [selectedCountry, setSelectedCountry] = useState<string>();
-	const [selectedCapital, setSelectedCapital] = useState<string>();
+	const [selectedCountry, setSelectedCountry] = useState("");
+	const [selectedCapital, setSelectedCapital] = useState("");
 
 	const [currentCountryData, setCurrentCountryData] = useState(defaultCountryData);
 	const [isCorrect, setIsCorrect] = useState<boolean>(); // null, true, or false
@@ -40,8 +31,8 @@ export default function Quiz({ defaultCountryData }: { defaultCountryData: Count
 			const randomIndex = Math.floor(Math.random() * countriesData.length);
 			setCurrentCountryData(countriesData[randomIndex]);
 			// Reset selections
-			setSelectedCountry(undefined);
-			setSelectedCapital(undefined);
+			setSelectedCountry("");
+			setSelectedCapital("");
 		}
 	};
 
@@ -60,52 +51,82 @@ export default function Quiz({ defaultCountryData }: { defaultCountryData: Count
 		setCurrentCountryData(countriesData[randomIndex]);
 	};
 
-	const resultClassNames = `${styles.result} ${isCorrect ? styles.correct : styles.incorrect}`;
+	const countryData = [currentCountryData.country, ...currentCountryData.similarCountries];
+	const capitalData = [currentCountryData.capital, ...currentCountryData.similarCapitals];
 
 	return (
-		<div className={styles.container}>
-			<Image
-				width={500}
-				height={500}
-				src={currentCountryData.flagImage}
-				alt={`Flag of ${currentCountryData.country}`}
-				className={"border-4 border-black"}
-			/>
+		<div className="flex items-center justify-center min-h-full">
+			<div className="flex flex-col items-center gap-10">
+				<Image
+					width={200}
+					height={200}
+					src={currentCountryData.flagImage}
+					alt={`Flag of ${currentCountryData.country}`}
+					className={"border-4 border-black"}
+				/>
 
-			<div className={styles.optionsContainer}>
-				<div className={styles.column}>
-					{[currentCountryData.country, ...currentCountryData.similarCountries].map((country) => (
-						<button
-							type="button"
-							key={country}
-							className={`${styles.option} ${selectedCountry === country ? styles.selected : ""}`}
-							onClick={() => handleCountrySelect(country)}
-						>
-							{country}
-						</button>
-					))}
+				<div className="flex gap-2">
+					<Selections
+						data={countryData}
+						selected={selectedCountry}
+						header={"Country"}
+						handleSelect={handleCountrySelect}
+					/>
+					<Selections
+						data={capitalData}
+						selected={selectedCapital}
+						header={"Capital"}
+						handleSelect={handleCapitalSelect}
+					/>
 				</div>
-				<div className={styles.column}>
-					{[currentCountryData.capital, ...currentCountryData.similarCapitals].map((capital) => (
-						<button
-							type="button"
-							key={capital}
-							className={`${styles.option} ${selectedCapital === capital ? styles.selected : ""}`}
-							onClick={() => handleCapitalSelect(capital)}
-						>
-							{capital}
-						</button>
-					))}
-				</div>
+
+				<button
+					className="border w-44 rounded-md px-4 py-3 hover:bg-blue-500 hover:text-white"
+					type="button"
+					onClick={checkAnswers}
+				>
+					Check Answers
+				</button>
+				{isCorrect !== undefined && <div>{isCorrect ? "Correct! Next country!" : "Incorrect, try again!"}</div>}
 			</div>
-			<button type="button" onClick={checkAnswers} className={styles.submitButton}>
-				Check Answers
-			</button>
-			{isCorrect !== null && (
-				<div className={resultClassNames}>
-					{isCorrect ? "Correct! Next country!" : "Incorrect, try again!"}
-				</div>
-			)}
 		</div>
 	);
 }
+
+const Selections = ({
+	data,
+	handleSelect,
+	selected,
+	header,
+}: { data: string[]; handleSelect: (selection: string) => void; selected: string; header: string }) => {
+	return (
+		<div className="flex flex-col gap-2 items-center">
+			<p className="font-bold">{header}</p>
+			{data.map((option) => (
+				<button
+					className={`border w-32 rounded-md px-4 py-3 ${selected === option ? "bg-blue-600 text-white" : ""}`}
+					type="button"
+					key={option}
+					onClick={() => handleSelect(option)}
+				>
+					{option}
+				</button>
+			))}
+		</div>
+	);
+};
+
+// function shuffleArray(arr: string[]): string[] {
+// 	// Create a copy of the array to avoid modifying the original array
+// 	const arrayCopy = [...arr];
+
+// 	for (let i = arrayCopy.length - 1; i > 0; i--) {
+// 		// Generate a random index
+// 		const j = Math.floor(Math.random() * (i + 1));
+
+// 		// Swap elements at indices i and j
+// 		[arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+// 	}
+
+// 	return arrayCopy;
+// }

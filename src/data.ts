@@ -1,8 +1,14 @@
 // src/data.js
 // Import the flags from the svg-country-flags package
-import flags from "svg-country-flags/countries.json";
+export type CountryData = {
+	country: string;
+	capital: string;
+	flagImage: string;
+	similarCountries: string[];
+	similarCapitals: string[];
+};
 
-const countriesData = [
+const countriesData: CountryData[] = [
 	{
 		country: "Norway",
 		capital: "Oslo",
