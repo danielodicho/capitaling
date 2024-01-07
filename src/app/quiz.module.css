@@ -4,18 +4,7 @@
     gap: 20px;
     padding: 20px;
   }
-  
-  .flagContainer {
-    /* Adjust as needed to properly display your flag */
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-  
-  .flagImage {
-    width: 100%;
-    height: auto; /* maintain aspect ratio */
-  }
+
   
   .optionsContainer {
     display: flex;
