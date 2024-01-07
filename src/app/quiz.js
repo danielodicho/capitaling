@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './quiz.module.css';
 import countriesData from '../data'; // Import the countries data
+import Image from 'next/image';
 
 export default function Quiz() {
   const defaultCountryData = {
@@ -64,7 +65,7 @@ const checkAnswers = () => {
   return (
     <div className={styles.container}>
       <div className={styles.flagContainer}>
-        <img src={currentCountryData.flagImage} alt={`Flag of ${currentCountryData.country}`} className={styles.flagImage} />
+        <Image src={currentCountryData.flagImage} alt={`Flag of ${currentCountryData.country}`} className={styles.flagImage} />
       </div>
       <div className={styles.optionsContainer}>
         <div className={styles.column}>
