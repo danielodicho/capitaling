@@ -12,7 +12,7 @@ const countriesData: CountryData[] = [
 	{
 		country: "Norway",
 		capital: "Oslo",
-		flagImage: "/images/svg/ch.svg",
+		flagImage: "/images/svg/no.svg",
 		similarCountries: ["Sweden", "Denmark", "Finland"],
 		similarCapitals: ["Stockholm", "Copenhagen", "Helsinki"],
 	},

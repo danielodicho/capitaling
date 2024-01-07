@@ -58,11 +58,13 @@ export default function Quiz({ defaultCountryData }: { defaultCountryData: Count
 		<div className="flex items-center justify-center min-h-full">
 			<div className="flex flex-col items-center gap-10">
 				<Image
-					width={200}
-					height={200}
 					src={currentCountryData.flagImage}
+					width={0}
+					height={0}
 					alt={`Flag of ${currentCountryData.country}`}
-					className={"border-4 border-black"}
+					sizes="100vw"
+					priority={true}
+					className="w-full h-auto border border-black"
 				/>
 
 				<div className="flex gap-2">
