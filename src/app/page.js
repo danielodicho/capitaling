@@ -12,3 +12,5 @@ export default function Page() {
 
     return <Quiz defaultCountryData={randomCountryData} />;
 }
+
+export const dynamic = 'force-dynamic';
