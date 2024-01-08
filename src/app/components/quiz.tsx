@@ -119,7 +119,7 @@ const Selections = ({
 	header: string;
 }) => {
 	return (
-		<div className="flex flex-col gap-2 items-center w-full pt-6">
+		<div className="flex flex-col gap-2 items-center w-full">
 			<p className="font-bold">{header}</p>
 			{indices.map((i) => {
 				const option = data[i];
