@@ -14,7 +14,7 @@ export type CountryData = {
 	similarCapitals: string[];
 };
 
-const countriesData: CountryData = [
+const countriesData: CountryData[] = [
 	{
 		country: "Algeria",
 		capital: "TBA",
