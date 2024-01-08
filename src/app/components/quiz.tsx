@@ -5,22 +5,27 @@ import countriesData from "../../data";
 import { Button } from "@components/button";
 import getRandomIndices from "@utils/getRandomIndices";
 import CurvedLine from "@components/curved-line";
+import { SimilarCountriesAndCitiesIndices } from "../page";
 
 export default function Quiz({
 	countryIndices,
-	initialSimilarCountriesIndices,
-	initialSimilarCitiesIndices,
-}: { countryIndices: number[]; initialSimilarCountriesIndices: number[]; initialSimilarCitiesIndices: number[] }) {
+	similarCountriesAndCitiesIndices,
+}: { countryIndices: number[]; similarCountriesAndCitiesIndices: SimilarCountriesAndCitiesIndices }) {
 	// navigation logic
 	const [selectedCountry, setSelectedCountry] = useState<string>();
 	const [selectedCapital, setSelectedCapital] = useState<string>();
 	const [currentIndex, setCurrentIndex] = useState(0);
-	const [showCapitalGuess, setShowCapitalGuess] = useState(false);
+	const [showAnswer, setShowAnswer] = useState(false);
 
 	// data to display
-	const [similarCountriesIndices, setSimilarCountriesIndices] = useState(() => initialSimilarCountriesIndices);
-	const [similarCitiesIndices, setSimilarCitiesIndices] = useState(() => initialSimilarCitiesIndices);
-
+	const similarCountriesIndices = useMemo(
+		() => similarCountriesAndCitiesIndices[currentIndex].similarCountriesIndices,
+		[similarCountriesAndCitiesIndices, currentIndex],
+	);
+	const similarCitiesIndices = useMemo(
+		() => similarCountriesAndCitiesIndices[currentIndex].similarCitiesIndices,
+		[similarCountriesAndCitiesIndices, currentIndex],
+	);
 	// TODO: this is just placeholder logic
 	// current score
 	const [score, setScore] = useState(0);
@@ -33,12 +38,10 @@ export default function Quiz({
 	const isCountryCorrect = selectedCountry === currentCountry.country;
 
 	const handleCountrySelect = (country: string) => {
-		if (selectedCountry) return;
 		setSelectedCountry(country);
 	};
 
 	const handleCapitalSelect = (capital: string) => {
-		if (selectedCapital) return;
 		setSelectedCapital(capital);
 
 		const isCapitalCorrect = capital === currentCountry.capital;
@@ -47,13 +50,17 @@ export default function Quiz({
 		}
 	};
 
+	const handleSubmit = () => {
+		setShowAnswer(true);
+	};
+
 	const handleNextFlag = () => {
 		if (currentIndex + 1 >= countryIndices.length) return;
 		setSelectedCountry(undefined);
 		setSelectedCapital(undefined);
-		setShowCapitalGuess(false);
 		setLineStart(null);
 		setLineEnd(null);
+		setShowAnswer(false);
 		setCurrentIndex(currentIndex + 1);
 	};
 
@@ -112,6 +119,7 @@ export default function Quiz({
 						indices={similarCountriesIndices}
 						selected={selectedCountry}
 						answer={currentCountry.country}
+						showAnswer={showAnswer}
 						header={"Country"}
 						onOptionSelect={(country) => handleCountrySelect(country)}
 						updatePosition={(position) => setLineStart(position)}
@@ -121,6 +129,7 @@ export default function Quiz({
 						indices={similarCitiesIndices}
 						selected={selectedCapital}
 						answer={currentCountry.capital}
+						showAnswer={showAnswer}
 						header={"Capital"}
 						onOptionSelect={(capital) => handleCapitalSelect(capital)}
 						updatePosition={(position) => setLineEnd(position)}
@@ -130,7 +139,10 @@ export default function Quiz({
 					)}
 				</div>
 
-				{selectedCountry && selectedCapital && <Button onClick={() => handleNextFlag()}>Next Flag</Button>}
+				{!showAnswer && <Button onClick={() => handleSubmit()}>Submit</Button>}
+				{showAnswer && selectedCountry && selectedCapital && (
+					<Button onClick={() => handleNextFlag()}>Next Flag</Button>
+				)}
 			</div>
 		</div>
 	);
@@ -144,6 +156,7 @@ const Selections = ({
 	header,
 	onOptionSelect,
 	updatePosition,
+	showAnswer,
 }: {
 	data: string[];
 	indices: number[];
@@ -152,6 +165,7 @@ const Selections = ({
 	header: string;
 	onOptionSelect: (selection: string) => void;
 	updatePosition: (position: DOMRect) => void;
+	showAnswer: boolean;
 }) => {
 	return (
 		<div className="flex flex-col gap-2 items-center w-full">
@@ -162,9 +176,15 @@ const Selections = ({
 					<Button
 						id={`button-${header}-${i}`}
 						className={`w-full py-6 ${
-							selected === option ? (selected === answer ? "bg-green-600" : "bg-red-600") : "hover:bg-[#1A1818]/90"
+							selected === option
+								? showAnswer
+									? selected === answer
+										? "bg-green-600"
+										: "bg-red-600"
+									: "bg-blue-600"
+								: "hover:bg-[#1A1818]/90"
 						}`}
-						disabled={!!selected && selected !== option}
+						disabled={showAnswer && selected !== option}
 						size={"lg"}
 						variant={"default"}
 						key={option}
