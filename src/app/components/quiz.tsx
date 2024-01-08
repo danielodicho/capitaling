@@ -47,6 +47,7 @@ export default function Quiz({
 	};
 
 	const handleNextFlag = () => {
+		if (currentIndex + 1 >= countryIndices.length) return;
 		setSelectedCountry(undefined);
 		setSelectedCapital(undefined);
 		setShowCapitalGuess(false);
