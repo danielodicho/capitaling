@@ -10,79 +10,94 @@ export default function Quiz({
 	initialSimilarCountriesIndices,
 	initialSimilarCitiesIndices,
 }: { countryIndices: number[]; initialSimilarCountriesIndices: number[]; initialSimilarCitiesIndices: number[] }) {
-	const [selectedCountry, setSelectedCountry] = useState("");
-	const [selectedCapital, setSelectedCapital] = useState("");
+	// navigation logic
+	const [selectedCountry, setSelectedCountry] = useState<string>();
+	const [selectedCapital, setSelectedCapital] = useState<string>();
 	const [currentIndex, setCurrentIndex] = useState(0);
+	const [showCapitalGuess, setShowCapitalGuess] = useState(false);
+
+	// data to display
 	const [similarCountriesIndices, setSimilarCountriesIndices] = useState(() => initialSimilarCountriesIndices);
 	const [similarCitiesIndices, setSimilarCitiesIndices] = useState(() => initialSimilarCitiesIndices);
-	const [isCorrect, setIsCorrect] = useState<boolean>();
+
+	// TODO: this is just placeholder logic
+	// current score
+	const [score, setScore] = useState(0);
 
 	const currentCountry = countriesData[countryIndices[currentIndex]];
 	const countryData = [currentCountry.country, ...currentCountry.similarCountries];
 	const capitalData = [currentCountry.capital, ...currentCountry.similarCapitals];
 
-	const checkAnswers = () => {
-		const isCountryCorrect = selectedCountry === currentCountry.country;
-		const isCapitalCorrect = selectedCapital === currentCountry.capital;
-		const isCorrect = isCountryCorrect && isCapitalCorrect;
-
-		setIsCorrect(isCorrect);
-
-		if (isCorrect) {
-			// TODO: temp block so that we don't go out of bounds
-			// this condition returns if it is the last question
-			if (currentIndex >= countryIndices.length - 1) return;
-			setCurrentIndex(currentIndex + 1);
-			setSelectedCountry("");
-			setSelectedCapital("");
-		}
-	};
+	// current state of guess
+	const isCountryCorrect = selectedCountry === currentCountry.country;
 
 	const handleCountrySelect = (country: string) => {
+		if (selectedCountry) return;
 		setSelectedCountry(country);
-		setIsCorrect(undefined);
 	};
 
 	const handleCapitalSelect = (capital: string) => {
+		if (selectedCapital) return;
 		setSelectedCapital(capital);
-		setIsCorrect(undefined);
+
+		const isCapitalCorrect = capital === currentCountry.capital;
+		if (isCountryCorrect && isCapitalCorrect) {
+			setScore(score + 1);
+		}
+	};
+
+	const handleNextFlag = () => {
+		setSelectedCountry(undefined);
+		setSelectedCapital(undefined);
+		setShowCapitalGuess(false);
+		setCurrentIndex(currentIndex + 1);
 	};
 
 	return (
-		<div className="flex pt-16 justify-center min-h-full">
-			<div className="flex flex-col items-center gap-10">
-				<div className="h-48">
+		<div className="flex pt-6 md:pt-16 justify-center min-h-full">
+			<div className="flex flex-col items-center gap-10 w-full px-4 md:w-[400px] ">
+				<p className="font-bold">
+					{score} / {countryIndices.length}
+				</p>
+				<div className="relative w-full h-56">
 					<Image
+						fill
 						src={currentCountry.flagImage}
 						width={0}
 						height={0}
-						alt={`Flag of ${currentCountry.country}`}
 						sizes="100vw"
+						alt={`Flag of ${currentCountry.country}`}
 						priority={true}
-						className="w-full h-auto border border-black"
+						className="border border-black object-cover"
 					/>
 				</div>
 
-				<div className="flex gap-2">
+				{!showCapitalGuess ? (
 					<Selections
 						data={countryData}
 						indices={similarCountriesIndices}
-						selected={selectedCountry}
-						header={"Country"}
 						handleSelect={handleCountrySelect}
+						selected={selectedCountry}
+						answer={currentCountry.country}
+						header={"Country"}
 					/>
+				) : (
 					<Selections
 						data={capitalData}
 						indices={similarCitiesIndices}
-						selected={selectedCapital}
-						header={"Capital"}
 						handleSelect={handleCapitalSelect}
+						selected={selectedCapital}
+						answer={currentCountry.capital}
+						header={"Capital"}
 					/>
-				</div>
+				)}
 
-				<Button type="button" onPress={() => checkAnswers()}>
-					Check Answers
-				</Button>
+				{isCountryCorrect && !showCapitalGuess && (
+					<Button onPress={() => setShowCapitalGuess(true)}>Guess Capital</Button>
+				)}
+				{(!!selectedCapital || (selectedCountry && !isCountryCorrect)) && (
+					<Button onPress={() => handleNextFlag()}>Next Flag</Button>
+				)}
 			</div>
 		</div>
 	);
@@ -93,22 +108,27 @@ const Selections = ({
 	indices,
 	handleSelect,
 	selected,
+	answer,
 	header,
 }: {
 	data: string[];
 	indices: number[];
 	handleSelect: (selection: string) => void;
-	selected: string;
+	selected: string | undefined;
+	answer: string;
 	header: string;
 }) => {
 	return (
-		<div className="flex flex-col gap-2 items-center">
+		<div className="flex flex-col gap-2 items-center w-full pt-6">
 			<p className="font-bold">{header}</p>
 			{indices.map((i) => {
 				const option = data[i];
 				return (
 					<Button
-						className={`w-32 ${selected === option ? "bg-blue-600" : "hover:bg-[#1A1818]/90"}`}
+						className={`w-full py-6 ${
+							selected === option ? (selected === answer ? "bg-green-600" : "bg-red-600") : "hover:bg-[#1A1818]/90"
+						}`}
+						isDisabled={!!selected && selected !== option}
 						size={"lg"}
 						variant={"default"}
 						key={option}
