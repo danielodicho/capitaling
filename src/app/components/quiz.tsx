@@ -1,36 +1,29 @@
 "use client";
 import Image from "next/image";
-import React, { useEffect, useMemo, useState } from "react";
-import countriesData, { CountryData } from "../../data"; // Import the countries data
+import React, { useState } from "react";
+import countriesData from "../../data";
+import { Button } from "@components/button";
 
-export default function Quiz({ defaultCountryData }: { defaultCountryData: CountryData }) {
-	// States to track the user's selections
+export default function Quiz({ countryIndices }: { countryIndices: number[] }) {
 	const [selectedCountry, setSelectedCountry] = useState("");
 	const [selectedCapital, setSelectedCapital] = useState("");
+	const [currentIndex, setCurrentIndex] = useState(0);
+	const [isCorrect, setIsCorrect] = useState<boolean>();
 
-	const [currentCountryData, setCurrentCountryData] = useState(defaultCountryData);
-	const [isCorrect, setIsCorrect] = useState<boolean>(); // null, true, or false
+	const currentCountry = countriesData[countryIndices[currentIndex]];
 
-	// Assume the first country is the one to guess for simplicity
-	//   const currentCountryData = countriesData[0];
-
-	// Event handlers for selecting country and capital
-
-	// Function to check answers
-	// Function to check answers
 	const checkAnswers = () => {
-		// Check if the selected country and capital match the current country data
-		const isCountryCorrect = selectedCountry === currentCountryData.country;
-		const isCapitalCorrect = selectedCapital === currentCountryData.capital;
+		const isCountryCorrect = selectedCountry === currentCountry.country;
+		const isCapitalCorrect = selectedCapital === currentCountry.capital;
 		const isCorrect = isCountryCorrect && isCapitalCorrect;
-		// Set the correctness state based on the user's selections
+
 		setIsCorrect(isCorrect);
 
-		// If both guesses are correct, select a new random country
 		if (isCorrect) {
-			const randomIndex = Math.floor(Math.random() * countriesData.length);
-			setCurrentCountryData(countriesData[randomIndex]);
-			// Reset selections
+			// TODO: temp block so that we don't go out of bounds
+			// this condition returns if it is the last question
+			if (currentIndex >= countryIndices.length - 1) return;
+			setCurrentIndex(currentIndex + 1);
 			setSelectedCountry("");
 			setSelectedCapital("");
 		}
@@ -38,34 +31,31 @@ export default function Quiz({ defaultCountryData }: { defaultCountryData: Count
 
 	const handleCountrySelect = (country: string) => {
 		setSelectedCountry(country);
-		setIsCorrect(undefined); // Reset the correctness state
+		setIsCorrect(undefined);
 	};
 
 	const handleCapitalSelect = (capital: string) => {
 		setSelectedCapital(capital);
-		setIsCorrect(undefined); // Reset the correctness state
+		setIsCorrect(undefined);
 	};
 
-	const handleNextCountry = () => {
-		const randomIndex = Math.floor(Math.random() * countriesData.length);
-		setCurrentCountryData(countriesData[randomIndex]);
-	};
-
-	const countryData = [currentCountryData.country, ...currentCountryData.similarCountries];
-	const capitalData = [currentCountryData.capital, ...currentCountryData.similarCapitals];
+	const countryData = [currentCountry.country, ...currentCountry.similarCountries];
+	const capitalData = [currentCountry.capital, ...currentCountry.similarCapitals];
 
 	return (
-		<div className="flex items-center justify-center min-h-full">
+		<div className="flex pt-16 justify-center min-h-full">
 			<div className="flex flex-col items-center gap-10">
-				<Image
-					src={currentCountryData.flagImage}
-					width={0}
-					height={0}
-					alt={`Flag of ${currentCountryData.country}`}
-					sizes="100vw"
-					priority={true}
-					className="w-full h-auto border border-black"
-				/>
+				<div className="h-48">
+					<Image
+						src={currentCountry.flagImage}
+						width={0}
+						height={0}
+						alt={`Flag of ${currentCountry.country}`}
+						sizes="100vw"
+						priority={true}
+						className="w-full h-auto border border-black"
+					/>
+				</div>
 
 				<div className="flex gap-2">
 					<Selections
@@ -82,14 +72,9 @@ export default function Quiz({ defaultCountryData }: { defaultCountryData: Count
 					/>
 				</div>
 
-				<button
-					className="border w-44 rounded-md px-4 py-3 hover:bg-blue-500 hover:text-white"
-					type="button"
-					onClick={checkAnswers}
-				>
+				<Button type="button" onPress={() => checkAnswers()}>
 					Check Answers
-				</button>
-				{isCorrect !== undefined && <div>{isCorrect ? "Correct! Next country!" : "Incorrect, try again!"}</div>}
+				</Button>
 			</div>
 		</div>
 	);
@@ -105,30 +90,16 @@ const Selections = ({
 		<div className="flex flex-col gap-2 items-center">
 			<p className="font-bold">{header}</p>
 			{data.map((option) => (
-				<button
-					className={`border w-32 rounded-md px-4 py-3 ${selected === option ? "bg-blue-600 text-white" : ""}`}
-					type="button"
+				<Button
+					className={`w-32 ${selected === option ? "bg-blue-600" : "hover:bg-[#1A1818]/90"}`}
+					size={"lg"}
+					variant={"default"}
 					key={option}
-					onClick={() => handleSelect(option)}
+					onPress={() => handleSelect(option)}
 				>
 					{option}
-				</button>
+				</Button>
 			))}
 		</div>
 	);
 };
-
-// function shuffleArray(arr: string[]): string[] {
-// 	// Create a copy of the array to avoid modifying the original array
-// 	const arrayCopy = [...arr];
-
-// 	for (let i = arrayCopy.length - 1; i > 0; i--) {
-// 		// Generate a random index
-// 		const j = Math.floor(Math.random() * (i + 1));
-
-// 		// Swap elements at indices i and j
-// 		[arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
-// 	}
-
-// 	return arrayCopy;
-// }

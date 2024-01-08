@@ -1,15 +1,13 @@
 import countriesData from "../data"; // Import the countries data
 import Quiz from "./components/quiz";
+import getRandomIndices from "@utils/getRandomIndices";
 
 export default function Page() {
-	const selectRandomCountry = () => {
-		const randomIndex = Math.floor(Math.random() * countriesData.length);
-		return countriesData[randomIndex];
-	};
+	const countryIndices = getRandomIndices(countriesData.length, 5);
+	const similarCountriesIndices = getRandomIndices(4, 4);
+	const similarCitiesIndices = getRandomIndices(4, 4);
 
-	const defaultCountryData = selectRandomCountry();
-
-	return <Quiz defaultCountryData={defaultCountryData} />;
+	return <Quiz countryIndices={countryIndices} />;
 }
 
 export const dynamic = "force-dynamic";
