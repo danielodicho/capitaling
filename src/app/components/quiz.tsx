@@ -1,9 +1,10 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import countriesData from "../../data";
 import { Button } from "@components/button";
-import getRandomIndices from "odicho/utils/getRandomIndices";
+import getRandomIndices from "@utils/getRandomIndices";
+import CurvedLine from "@components/curved-line";
 
 export default function Quiz({
 	countryIndices,
@@ -25,8 +26,8 @@ export default function Quiz({
 	const [score, setScore] = useState(0);
 
 	const currentCountry = countriesData[countryIndices[currentIndex]];
-	const countryData = [currentCountry.country, ...currentCountry.similarCountries];
-	const capitalData = [currentCountry.capital, ...currentCountry.similarCapitals];
+	const countryData = useMemo(() => [currentCountry.country, ...currentCountry.similarCountries], [currentCountry]);
+	const capitalData = useMemo(() => [currentCountry.capital, ...currentCountry.similarCapitals], [currentCountry]);
 
 	// current state of guess
 	const isCountryCorrect = selectedCountry === currentCountry.country;
@@ -51,12 +52,44 @@ export default function Quiz({
 		setSelectedCountry(undefined);
 		setSelectedCapital(undefined);
 		setShowCapitalGuess(false);
+		setLineStart(null);
+		setLineEnd(null);
 		setCurrentIndex(currentIndex + 1);
 	};
 
+	const [lineStart, setLineStart] = useState<DOMRect | null>(null);
+	const [lineEnd, setLineEnd] = useState<DOMRect | null>(null);
+
+	useLayoutEffect(() => {
+		const updatePositions = () => {
+			const startIndex = similarCountriesIndices.findIndex((i) => countryData[i] === selectedCountry);
+
+			if (startIndex !== -1) {
+				const startElement = document.getElementById(`button-Country-${similarCountriesIndices[startIndex]}`);
+				const startPosition = startElement?.getBoundingClientRect();
+				!!startPosition && setLineStart(startPosition);
+			}
+
+			const endIndex = similarCitiesIndices.findIndex((i) => capitalData[i] === selectedCapital);
+			if (endIndex !== -1) {
+				const endElement = document.getElementById(`button-Capital-${similarCitiesIndices[endIndex]}`);
+				const endPosition = endElement?.getBoundingClientRect();
+				!!endPosition && setLineEnd(endPosition);
+			}
+		};
+
+		updatePositions();
+
+		window.addEventListener("resize", updatePositions);
+
+		return () => {
+			window.removeEventListener("resize", updatePositions);
+		};
+	}, [selectedCountry, selectedCapital, countryData, capitalData, similarCountriesIndices, similarCitiesIndices]);
+
 	return (
-		<div className="flex pt-6 md:pt-16 justify-center min-h-full">
-			<div className="flex flex-col items-center gap-10 w-full px-4 md:w-[400px] ">
+		<div className="flex pt-6 sm:pt-16 justify-center min-h-full">
+			<div className="flex flex-col items-center gap-10 w-full px-4 sm:w-[400px] ">
 				<p className="font-bold">
 					{score} / {countryIndices.length}
 				</p>
@@ -73,32 +106,31 @@ export default function Quiz({
 					/>
 				</div>
 
-				{!showCapitalGuess ? (
+				<div className="flex w-full gap-14 sm:gap-10 justify-between items-center">
 					<Selections
 						data={countryData}
 						indices={similarCountriesIndices}
-						handleSelect={handleCountrySelect}
 						selected={selectedCountry}
 						answer={currentCountry.country}
 						header={"Country"}
+						onOptionSelect={(country) => handleCountrySelect(country)}
+						updatePosition={(position) => setLineStart(position)}
 					/>
-				) : (
 					<Selections
 						data={capitalData}
 						indices={similarCitiesIndices}
-						handleSelect={handleCapitalSelect}
 						selected={selectedCapital}
 						answer={currentCountry.capital}
 						header={"Capital"}
+						onOptionSelect={(capital) => handleCapitalSelect(capital)}
+						updatePosition={(position) => setLineEnd(position)}
 					/>
-				)}
+					{lineStart && lineEnd && (
+						<CurvedLine start={lineStart} end={lineEnd} curveOffsetStart={5} curveOffsetEnd={5} />
+					)}
+				</div>
 
-				{isCountryCorrect && !showCapitalGuess && (
-					<Button onPress={() => setShowCapitalGuess(true)}>Guess Capital</Button>
-				)}
-				{(!!selectedCapital || (selectedCountry && !isCountryCorrect)) && (
-					<Button onPress={() => handleNextFlag()}>Next Flag</Button>
-				)}
+				{selectedCountry && selectedCapital && <Button onClick={() => handleNextFlag()}>Next Flag</Button>}
 			</div>
 		</div>
 	);
@@ -107,17 +139,19 @@ export default function Quiz({
 const Selections = ({
 	data,
 	indices,
-	handleSelect,
 	selected,
 	answer,
 	header,
+	onOptionSelect,
+	updatePosition,
 }: {
 	data: string[];
 	indices: number[];
-	handleSelect: (selection: string) => void;
 	selected: string | undefined;
 	answer: string;
 	header: string;
+	onOptionSelect: (selection: string) => void;
+	updatePosition: (position: DOMRect) => void;
 }) => {
 	return (
 		<div className="flex flex-col gap-2 items-center w-full">
@@ -126,14 +160,19 @@ const Selections = ({
 				const option = data[i];
 				return (
 					<Button
+						id={`button-${header}-${i}`}
 						className={`w-full py-6 ${
 							selected === option ? (selected === answer ? "bg-green-600" : "bg-red-600") : "hover:bg-[#1A1818]/90"
 						}`}
-						isDisabled={!!selected && selected !== option}
+						disabled={!!selected && selected !== option}
 						size={"lg"}
 						variant={"default"}
 						key={option}
-						onPress={() => handleSelect(option)}
+						onClick={(e) => {
+							const position = e.currentTarget.getBoundingClientRect();
+							onOptionSelect(option);
+							updatePosition(position);
+						}}
 					>
 						{option}
 					</Button>
