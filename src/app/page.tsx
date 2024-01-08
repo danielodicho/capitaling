@@ -4,10 +4,16 @@ import getRandomIndices from "@utils/getRandomIndices";
 
 export default function Page() {
 	const countryIndices = getRandomIndices(countriesData.length, 5);
-	const similarCountriesIndices = getRandomIndices(4, 4);
-	const similarCitiesIndices = getRandomIndices(4, 4);
+	const initialSimilarCountriesIndices = getRandomIndices(4, 4);
+	const initialSimilarCitiesIndices = getRandomIndices(4, 4);
 
-	return <Quiz countryIndices={countryIndices} />;
+	return (
+		<Quiz
+			countryIndices={countryIndices}
+			initialSimilarCountriesIndices={initialSimilarCountriesIndices}
+			initialSimilarCitiesIndices={initialSimilarCitiesIndices}
+		/>
+	);
 }
 
 export const dynamic = "force-dynamic";
