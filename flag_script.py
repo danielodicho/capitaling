@@ -25,3 +25,31 @@ lookalikes = [
 ]
 
 print(countries[lookalikes[0][0]])
+
+list_of_countries = []
+for idx, country_idx in enumerate(have_look_alikes):
+    country_data = {
+		"country": countries[country_idx],
+		"capital": "tbd",
+		"flagImage": "/images/svg/XXX.svg",
+		"similarCountries": [],
+		"similarCapitals": [],
+	}
+    # print(country_idx,x, "hi")
+    for country in lookalikes[idx]:
+        country_data["similarCountries"].append(countries[country])
+    list_of_countries.append(country_data)
+    
+# print(len(list_of_countries), len(have_look_alikes))
+for idx in range(len(countries)):
+    country_data = {
+		"country": countries[idx],
+		"capital": "tbd",
+		"flagImage": "/images/svg/XXX.svg",
+		"similarCountries": [],
+		"similarCapitals": [],
+	}
+    if idx not in have_look_alikes:
+        list_of_countries.append(country_data)
+
+print(list_of_countries)
