@@ -10,12 +10,19 @@ import { SimilarCountriesAndCitiesIndices } from "../page";
 export default function Quiz({
 	countryIndices,
 	similarCountriesAndCitiesIndices,
-}: { countryIndices: number[]; similarCountriesAndCitiesIndices: SimilarCountriesAndCitiesIndices }) {
+	setShowSettings,
+}: { countryIndices: number[]; similarCountriesAndCitiesIndices: SimilarCountriesAndCitiesIndices, setShowSettings: React.Dispatch<boolean> }) {
 	// navigation logic
 	const [selectedCountry, setSelectedCountry] = useState<string>();
 	const [selectedCapital, setSelectedCapital] = useState<string>();
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [showAnswer, setShowAnswer] = useState(false);
+	const [showSettingsButton, setShowSettingsButton] = useState(false);
+
+	const toggleSettings = () => {
+		setShowSettings(!showSettingsButton);
+		setShowSettings(true)
+	}
 
 	// data to display
 	const similarCountriesIndices = useMemo(
@@ -137,6 +144,9 @@ export default function Quiz({
 					{lineStart && lineEnd && (
 						<CurvedLine start={lineStart} end={lineEnd} curveOffsetStart={5} curveOffsetEnd={5} />
 					)}
+				</div>
+				<div className="flex w-full gap-14 sm:gap-10 justify-between items-center">
+					<Button onClick={() => toggleSettings()}>Show Settings</Button>
 				</div>
 
 				{!showAnswer && <Button onClick={() => handleSubmit()}>Submit</Button>}
