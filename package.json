@@ -10,12 +10,15 @@
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",
+    "framer-motion": "^12.7.4",
     "next": "14.0.4",
     "react": "^18",
     "react-aria-components": "^1.0.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^18",
     "svg-country-flags": "^1.2.10",
-    "tailwind-merge": "^2.2.0"
+    "tailwind-merge": "^2.2.0",
+    "world-countries": "^5.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
