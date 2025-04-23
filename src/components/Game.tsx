@@ -16,6 +16,9 @@ export default function Game() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [lastResult, setLastResult] = useState<'correct' | 'wrong' | null>(null);
 
+  // Shuffle flag order once on mount
+  const [shuffledCountries] = useState<CountryData[]>(() => [...countriesData].sort(() => Math.random() - 0.5));
+
   useEffect(() => {
     setOptions(generateOptions());
   }, [currentIndex]);
@@ -27,14 +30,17 @@ export default function Game() {
   }, [time]);
 
   function generateOptions(): string[] {
-    const current = countriesData[currentIndex];
-    const wrongs = countriesData
+    const current = shuffledCountries[currentIndex];
+    // Collect capitals of other countries
+    const wrongs = shuffledCountries
       .filter((_, i) => i !== currentIndex)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 1)
-      .map((c) => c.capital);
-    const caps = [current.capital, ...wrongs].sort(() => 0.5 - Math.random());
-    return caps;
+      .map((c) => c.capital)
+      .filter((cap) => cap && cap !== current.capital);
+    // Pick a random wrong option
+    const randomWrong = wrongs[Math.floor(Math.random() * wrongs.length)];
+    const options = [current.capital, randomWrong];
+    // Shuffle positions
+    return options.sort(() => Math.random() - 0.5);
   }
 
   function playSound(correct: boolean) {
@@ -64,7 +70,7 @@ export default function Game() {
   }
 
   function handleSwipe(choice: string) {
-    const current = countriesData[currentIndex];
+    const current = shuffledCountries[currentIndex];
     const correct = choice === current.capital;
     setLastResult(correct ? 'correct' : 'wrong');
     if (correct) {
@@ -79,7 +85,7 @@ export default function Game() {
     }
     setTimeout(() => {
       setLastResult(null);
-      if (currentIndex < countriesData.length - 1) setCurrentIndex((i) => i + 1);
+      if (currentIndex < shuffledCountries.length - 1) setCurrentIndex((i) => i + 1);
       else setTime(0);
     }, 600);
   }
@@ -97,7 +103,7 @@ export default function Game() {
     );
   }
 
-  const current = countriesData[currentIndex];
+  const current = shuffledCountries[currentIndex];
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen p-4 bg-gray-100">

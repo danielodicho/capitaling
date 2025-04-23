@@ -9,9 +9,14 @@
     "checks": "npx @biomejs/biome check --apply ./src"
   },
   "dependencies": {
+    "@types/pg": "^8.11.13",
     "class-variance-authority": "^0.7.0",
+    "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.0",
+    "drizzle-orm": "^0.42.0",
     "framer-motion": "^12.7.4",
     "next": "14.0.4",
+    "pg": "^8.14.1",
     "react": "^18",
     "react-aria-components": "^1.0.0",
     "react-confetti": "^6.4.0",

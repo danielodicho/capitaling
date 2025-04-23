@@ -18,23 +18,57 @@ export default function Leaderboard({ score, onPlayAgain }: LeaderboardProps) {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("capitaling_leaderboard");
-    if (saved) {
+    // Fetch top scores from the database
+    async function loadScores() {
       try {
+        const res = await fetch("/api/scores");
+        if (res.ok) {
+          const data: LeaderboardEntry[] = await res.json();
+          setEntries(data);
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to load scores", err);
+      }
+      // Fallback to localStorage
+      const saved = localStorage.getItem("capitaling_leaderboard");
+      if (saved) {
         setEntries(JSON.parse(saved));
-      } catch {}
+      }
     }
+    loadScores();
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const newEntry: LeaderboardEntry = { name: name || "Anonymous", score, date: new Date().toISOString() };
-    const updated = [...entries, newEntry]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
-    setEntries(updated);
-    localStorage.setItem("capitaling_leaderboard", JSON.stringify(updated));
-    setSubmitted(true);
+    const playerName = name || "Anonymous";
+    try {
+      const res = await fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: playerName, score }),
+      });
+      if (res.ok) {
+        const entry: LeaderboardEntry = await res.json();
+        const updated = [entry, ...entries]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+        setEntries(updated);
+        setSubmitted(true);
+      } else {
+        throw new Error('DB submit failed');
+      }
+    } catch (err) {
+      console.error('Error submitting score', err);
+      // Fallback to localStorage submission
+      const newEntry: LeaderboardEntry = { name: playerName, score, date: new Date().toISOString() };
+      const updated = [...entries, newEntry]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      setEntries(updated);
+      localStorage.setItem("capitaling_leaderboard", JSON.stringify(updated));
+      setSubmitted(true);
+    }
   }
 
   return (
