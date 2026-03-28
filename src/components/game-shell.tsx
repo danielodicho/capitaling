@@ -31,15 +31,23 @@ import {
 } from "@/lib/game-storage";
 
 const REVEAL_DURATION_MS = 1300;
+const TIMED_MODE_SECONDS = 60;
+
+type SessionMode = "classic" | "timed";
 
 type SummarySnapshot = {
 	run: RunState;
+	sessionMode: SessionMode;
+	timedOut: boolean;
 };
 
 export default function GameShell() {
 	const [selectedRegion, setSelectedRegion] = useState<RegionFilter>("all");
+	const [selectedMode, setSelectedMode] = useState<SessionMode>("classic");
 	const [profile, setProfile] = useState<PlayerProgress>(createEmptyProgress);
 	const [hydrated, setHydrated] = useState(false);
+	const [activeMode, setActiveMode] = useState<SessionMode>("classic");
+	const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 	const [run, setRun] = useState<RunState | null>(null);
 	const [summary, setSummary] = useState<SummarySnapshot | null>(null);
 	const revealTimerRef = useRef<number | null>(null);
@@ -76,6 +84,35 @@ export default function GameShell() {
 			}
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!run || activeMode !== "timed" || timeRemaining === null) {
+			return;
+		}
+
+		if (timeRemaining <= 0) {
+			clearRevealTimer();
+			const timedOutRun: RunState = {
+				...run,
+				phase: "summary",
+				currentPrompt: null,
+			};
+			setSummary({
+				run: timedOutRun,
+				sessionMode: activeMode,
+				timedOut: true,
+			});
+			setRun(null);
+			setTimeRemaining(null);
+			return;
+		}
+
+		const timer = window.setTimeout(() => {
+			setTimeRemaining((current) => (current === null ? null : current - 1));
+		}, 1000);
+
+		return () => window.clearTimeout(timer);
+	}, [activeMode, run, timeRemaining]);
 
 	useEffect(() => {
 		if (run?.phase !== "active" || !run.currentPrompt) {
@@ -133,13 +170,15 @@ export default function GameShell() {
 
 	const selectedCards = useMemo(() => getCardsForRegion(selectedRegion), [selectedRegion]);
 
-	function startStandardRun(regionFilter: RegionFilter) {
+	function startStandardRun(regionFilter: RegionFilter, sessionMode: SessionMode) {
 		clearRevealTimer();
 		setSummary(null);
 		const nextProfile = recordRunStart(profile);
 		const pool = getCardsForRegion(regionFilter);
 
 		setProfile(nextProfile);
+		setActiveMode(sessionMode);
+		setTimeRemaining(sessionMode === "timed" ? TIMED_MODE_SECONDS : null);
 		startTransition(() => {
 			setRun(
 				createRun({
@@ -164,6 +203,8 @@ export default function GameShell() {
 		clearRevealTimer();
 		setSummary(null);
 		setProfile(recordRunStart(profile));
+		setActiveMode("classic");
+		setTimeRemaining(null);
 
 		startTransition(() => {
 			setRun(
@@ -200,7 +241,9 @@ export default function GameShell() {
 			navigator.vibrate(resolution.correct ? 12 : 36);
 		}
 
-		scheduleAdvance(nextProfile);
+		if (activeMode === "timed") {
+			scheduleAdvance(nextProfile);
+		}
 	}
 
 	handleAnswerRef.current = handleAnswer;
@@ -215,8 +258,13 @@ export default function GameShell() {
 		const nextRun = advanceAfterReveal(currentRun);
 
 		if (nextRun.phase === "summary") {
-			setSummary({ run: nextRun });
+			setSummary({
+				run: nextRun,
+				sessionMode: activeMode,
+				timedOut: false,
+			});
 			setRun(null);
+			setTimeRemaining(null);
 			return;
 		}
 
@@ -228,6 +276,7 @@ export default function GameShell() {
 		clearRevealTimer();
 		setRun(null);
 		setSummary(null);
+		setTimeRemaining(null);
 	}
 
 	function scheduleAdvance(nextProfile: PlayerProgress) {
@@ -273,11 +322,13 @@ export default function GameShell() {
 								className="w-full"
 							>
 								<RunScreen
+									activeMode={activeMode}
 									bestStreak={profile.bestStreak}
 									onAnswer={handleAnswer}
 									onAdvance={() => handleAdvance()}
 									onExit={handleReturnToLobby}
 									run={run}
+									timeRemaining={timeRemaining}
 								/>
 							</motion.section>
 						) : summary ? (
@@ -293,8 +344,10 @@ export default function GameShell() {
 									bestStreak={profile.bestStreak}
 									onBack={handleReturnToLobby}
 									onReplayMisses={() => startReviewRun(summary.run.missedCodes)}
-									onRunAgain={() => startStandardRun(selectedRegion)}
+									onRunAgain={() => startStandardRun(selectedRegion, summary.sessionMode)}
 									run={summary.run}
+									sessionMode={summary.sessionMode}
+									timedOut={summary.timedOut}
 								/>
 							</motion.section>
 						) : (
@@ -310,8 +363,10 @@ export default function GameShell() {
 									bestStreak={profile.bestStreak}
 									cardsCount={selectedCards.length}
 									hydrated={hydrated}
+									onSelectMode={setSelectedMode}
 									onSelectRegion={setSelectedRegion}
-									onStart={() => startStandardRun(selectedRegion)}
+									onStart={() => startStandardRun(selectedRegion, selectedMode)}
+									selectedMode={selectedMode}
 									selectedRegion={selectedRegion}
 									totalCorrect={profile.totalCorrect}
 								/>
@@ -328,16 +383,20 @@ function LobbyScreen({
 	bestStreak,
 	cardsCount,
 	hydrated,
+	onSelectMode,
 	onSelectRegion,
 	onStart,
+	selectedMode,
 	selectedRegion,
 	totalCorrect,
 }: {
 	bestStreak: number;
 	cardsCount: number;
 	hydrated: boolean;
+	onSelectMode: (mode: SessionMode) => void;
 	onSelectRegion: (region: RegionFilter) => void;
 	onStart: () => void;
+	selectedMode: SessionMode;
 	selectedRegion: RegionFilter;
 	totalCorrect: number;
 }) {
@@ -345,10 +404,31 @@ function LobbyScreen({
 		<div className="mx-auto w-full max-w-2xl rounded-[2rem] border border-stone-200 bg-white px-5 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:px-8">
 			<div className="space-y-4 text-center">
 				<p className="text-xs uppercase tracking-[0.26em] text-stone-500">Minimal mode</p>
-				<h1 className="display-type text-5xl font-semibold leading-none sm:text-6xl">One flag. One choice.</h1>
+				<h1 className="display-type text-5xl font-semibold leading-none sm:text-6xl">One flag. Four choices.</h1>
 				<p className="mx-auto max-w-xl text-base leading-7 text-stone-600 sm:text-lg">
-					Swipe left for the left answer. Swipe right for the right answer. Keep the streak alive.
+					Classic lets you control the pace. Timed turns it into a 60-second sprint.
 				</p>
+			</div>
+
+			<div className="mt-8 grid gap-3 sm:grid-cols-2">
+				{SESSION_MODES.map((mode) => {
+					const active = mode.value === selectedMode;
+					return (
+						<button
+							key={mode.value}
+							type="button"
+							onClick={() => onSelectMode(mode.value)}
+							className={`rounded-[1.4rem] border px-4 py-4 text-left transition ${
+								active
+									? "border-slate-950 bg-slate-950 text-white"
+									: "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
+							}`}
+						>
+							<p className="text-xs uppercase tracking-[0.22em] opacity-70">{mode.label}</p>
+							<p className="mt-2 text-sm leading-6 opacity-90">{mode.description}</p>
+						</button>
+					);
+				})}
 			</div>
 
 			<div className="mt-8 flex flex-wrap justify-center gap-2">
@@ -386,17 +466,21 @@ function LobbyScreen({
 }
 
 function RunScreen({
+	activeMode,
 	bestStreak,
 	onAnswer,
 	onAdvance,
 	onExit,
 	run,
+	timeRemaining,
 }: {
+	activeMode: SessionMode;
 	bestStreak: number;
 	onAnswer: (choice: string) => void;
 	onAdvance: () => void;
 	onExit: () => void;
 	run: RunState;
+	timeRemaining: number | null;
 }) {
 	const prompt = run.currentPrompt;
 
@@ -419,8 +503,12 @@ function RunScreen({
 
 				<div className="flex items-center gap-3 text-sm text-stone-600">
 					<MiniStat label="Region" value={prompt.card.region} />
+					<MiniStat label="Mode" value={activeMode} />
 					<MiniStat label="Streak" value={run.streak} />
 					<MiniStat label="Best" value={bestStreak} />
+					{activeMode === "timed" && timeRemaining !== null ? (
+						<MiniStat label="Time" value={`${timeRemaining}s`} />
+					) : null}
 					<LivesRow lives={run.lives} />
 				</div>
 			</div>
@@ -447,7 +535,15 @@ function RunScreen({
 						<p className="mt-2 text-2xl font-semibold">
 							{prompt.card.country} • {run.reveal.correctCapital}
 						</p>
-						<p className="mt-1 text-sm opacity-75">Tap anywhere to continue.</p>
+						<p className="mt-1 text-sm opacity-75">
+							{prompt.card.region} • {prompt.card.subregion}
+						</p>
+						{activeMode === "classic" ? (
+							<p className="mt-3 text-sm leading-6 opacity-85">{getFunFact(prompt.card)}</p>
+						) : null}
+						<p className="mt-3 text-sm opacity-75">
+							{activeMode === "classic" ? "Tap anywhere to continue." : "Next card incoming."}
+						</p>
 					</motion.button>
 				) : null}
 			</AnimatePresence>
@@ -473,7 +569,7 @@ function RunScreen({
 
 			<div className="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-stone-500">
 				<p>{prompt.card.subregion}</p>
-				<p>Swipe up / right / down / left</p>
+				<p>{activeMode === "classic" ? "Swipe up / right / down / left" : "Race the clock"}</p>
 			</div>
 		</div>
 	);
@@ -579,18 +675,24 @@ function SummaryScreen({
 	onReplayMisses,
 	onRunAgain,
 	run,
+	sessionMode,
+	timedOut,
 }: {
 	bestStreak: number;
 	onBack: () => void;
 	onReplayMisses: () => void;
 	onRunAgain: () => void;
 	run: RunState;
+	sessionMode: SessionMode;
+	timedOut: boolean;
 }) {
 	const isPersonalBest = run.bestStreak > 0 && run.bestStreak >= bestStreak;
 
 	return (
 		<div className="mx-auto w-full max-w-2xl rounded-[2rem] border border-stone-200 bg-white px-5 py-8 text-center shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:px-8">
-			<p className="text-xs uppercase tracking-[0.26em] text-stone-500">Run over</p>
+			<p className="text-xs uppercase tracking-[0.26em] text-stone-500">
+				{timedOut ? "Time's up" : `${sessionMode} mode`}
+			</p>
 			<h2 className="display-type mt-4 text-6xl font-semibold leading-none sm:text-7xl">{run.bestStreak}</h2>
 			<p className="mt-3 text-lg text-stone-700">streak</p>
 
@@ -631,6 +733,18 @@ function SummaryScreen({
 }
 
 const DIRECTION_LABELS = ["Up", "Right", "Down", "Left"] as const;
+const SESSION_MODES: { value: SessionMode; label: string; description: string }[] = [
+	{
+		value: "classic",
+		label: "Classic",
+		description: "Self-paced rounds with a quick fact after every answer.",
+	},
+	{
+		value: "timed",
+		label: "Timed",
+		description: "A 60-second sprint that auto-advances between cards.",
+	},
+];
 
 function MiniStat({ label, value }: { label: string; value: number | string }) {
 	return (
@@ -653,4 +767,20 @@ function LivesRow({ lives }: { lives: number }) {
 
 function dedupeCards(cards: (typeof allCountryCards)[number][]): (typeof allCountryCards)[number][] {
 	return Array.from(new Map(cards.map((card) => [card.code, card])).values());
+}
+
+function getFunFact(card: PromptState["card"]): string {
+	if (card.country[0]?.toLowerCase() === card.capital[0]?.toLowerCase()) {
+		return `${card.country} and ${card.capital} start with the same letter.`;
+	}
+
+	if (card.capital.includes(" ")) {
+		return `${card.capital} is one of the multi-word capitals in the deck.`;
+	}
+
+	if (card.capital.length <= 6) {
+		return `${card.capital} is one of the shorter capital names you will run into.`;
+	}
+
+	return `${card.country} sits in ${card.subregion}.`;
 }
