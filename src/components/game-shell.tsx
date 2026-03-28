@@ -19,7 +19,6 @@ import {
 	applyAnswerResolution,
 	createRun,
 	evaluateAnswer,
-	expandPrompt,
 } from "@/lib/game-engine";
 import {
 	type PlayerProgress,
@@ -95,19 +94,31 @@ export default function GameShell() {
 
 			const key = event.key.toLowerCase();
 
-			if (!prompt.isExpanded && (key === "arrowleft" || key === "a")) {
+			if (key === "arrowup" || key === "w") {
 				event.preventDefault();
-				handleAnswerRef.current(prompt.collapsedOptions[0]);
+				handleAnswerRef.current(prompt.expandedOptions[0]);
 				return;
 			}
 
-			if (!prompt.isExpanded && (key === "arrowright" || key === "d")) {
+			if (key === "arrowright" || key === "d") {
 				event.preventDefault();
-				handleAnswerRef.current(prompt.collapsedOptions[1]);
+				handleAnswerRef.current(prompt.expandedOptions[1]);
 				return;
 			}
 
-			if (prompt.isExpanded && ["1", "2", "3", "4"].includes(key)) {
+			if (key === "arrowdown" || key === "s") {
+				event.preventDefault();
+				handleAnswerRef.current(prompt.expandedOptions[2]);
+				return;
+			}
+
+			if (key === "arrowleft" || key === "a") {
+				event.preventDefault();
+				handleAnswerRef.current(prompt.expandedOptions[3]);
+				return;
+			}
+
+			if (["1", "2", "3", "4"].includes(key)) {
 				event.preventDefault();
 				const option = prompt.expandedOptions[Number(key) - 1];
 				if (option) {
@@ -194,14 +205,6 @@ export default function GameShell() {
 
 	handleAnswerRef.current = handleAnswer;
 
-	function handleExpandChoices() {
-		if (!run || run.phase !== "active") {
-			return;
-		}
-
-		setRun(expandPrompt(run));
-	}
-
 	function handleAdvance(profileSnapshot = profileRef.current) {
 		const currentRun = runRef.current;
 		if (!currentRun) {
@@ -242,8 +245,17 @@ export default function GameShell() {
 	}
 
 	return (
-		<main className="min-h-screen px-4 py-6 text-slate-950 sm:px-6">
-			<div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col">
+		<main className="retro-stage relative min-h-screen overflow-hidden px-4 py-6 text-slate-950 sm:px-6">
+			<div className="retro-backdrop pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+				<div className="retro-backdrop__stars" />
+				<div className="retro-backdrop__sun" />
+				<div className="retro-backdrop__mountains retro-backdrop__mountains--far" />
+				<div className="retro-backdrop__mountains retro-backdrop__mountains--near" />
+				<div className="retro-backdrop__grid" />
+				<div className="retro-backdrop__scanlines" />
+			</div>
+
+			<div className="relative z-10 mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col">
 				<div className="mb-6 flex items-center justify-between text-sm text-stone-500">
 					<p className="display-type text-2xl text-slate-950">Capitaling</p>
 					<p>{run ? run.label : "Flags to capitals"}</p>
@@ -265,7 +277,6 @@ export default function GameShell() {
 									onAnswer={handleAnswer}
 									onAdvance={() => handleAdvance()}
 									onExit={handleReturnToLobby}
-									onExpandChoices={handleExpandChoices}
 									run={run}
 								/>
 							</motion.section>
@@ -379,14 +390,12 @@ function RunScreen({
 	onAnswer,
 	onAdvance,
 	onExit,
-	onExpandChoices,
 	run,
 }: {
 	bestStreak: number;
 	onAnswer: (choice: string) => void;
 	onAdvance: () => void;
 	onExit: () => void;
-	onExpandChoices: () => void;
 	run: RunState;
 }) {
 	const prompt = run.currentPrompt;
@@ -395,7 +404,7 @@ function RunScreen({
 		return null;
 	}
 
-	const options = prompt.isExpanded ? prompt.expandedOptions : prompt.collapsedOptions;
+	const options = prompt.expandedOptions;
 
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
@@ -409,6 +418,7 @@ function RunScreen({
 				</button>
 
 				<div className="flex items-center gap-3 text-sm text-stone-600">
+					<MiniStat label="Region" value={prompt.card.region} />
 					<MiniStat label="Streak" value={run.streak} />
 					<MiniStat label="Best" value={bestStreak} />
 					<LivesRow lives={run.lives} />
@@ -455,24 +465,15 @@ function RunScreen({
 								: "border-stone-200 bg-white text-slate-950 shadow-[0_14px_34px_rgba(15,23,42,0.07)] hover:-translate-y-0.5 hover:border-stone-300"
 						}`}
 					>
-						<p className="text-xs uppercase tracking-[0.22em] text-stone-400">
-							{prompt.isExpanded ? `Choice ${index + 1}` : index === 0 ? "Left" : "Right"}
-						</p>
+						<p className="text-xs uppercase tracking-[0.22em] text-stone-400">{DIRECTION_LABELS[index]}</p>
 						<p className="mt-2 text-2xl font-semibold">{option}</p>
 					</button>
 				))}
 			</div>
 
 			<div className="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-stone-500">
-				<button
-					type="button"
-					onClick={onExpandChoices}
-					disabled={prompt.isExpanded || run.phase !== "active"}
-					className="rounded-full px-3 py-2 font-semibold transition hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45"
-				>
-					{prompt.isExpanded ? "Four choices open" : "Need more choices?"}
-				</button>
-				<p>{prompt.isExpanded ? "Tap or press 1-4" : "Swipe or use A / D"}</p>
+				<p>{prompt.card.subregion}</p>
+				<p>Swipe up / right / down / left</p>
 			</div>
 		</div>
 	);
@@ -502,21 +503,39 @@ function FlagCard({
 	return (
 		<div className="rounded-[2rem] border border-stone-200 bg-white p-4 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
 			<motion.div
-				drag={run.phase === "active" && !prompt.isExpanded ? "x" : false}
-				dragConstraints={{ left: 0, right: 0 }}
+				drag={run.phase === "active" ? true : false}
+				dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
 				onDragEnd={(_, info) => {
-					if (run.phase !== "active" || prompt.isExpanded) {
+					if (run.phase !== "active") {
 						x.set(0);
 						return;
 					}
 
-					if (info.offset.x < -110) {
-						onAnswer(prompt.collapsedOptions[0]);
+					const horizontal = Math.abs(info.offset.x);
+					const vertical = Math.abs(info.offset.y);
+
+					if (horizontal < 90 && vertical < 90) {
+						x.set(0);
 						return;
 					}
 
-					if (info.offset.x > 110) {
-						onAnswer(prompt.collapsedOptions[1]);
+					if (vertical > horizontal && info.offset.y < -90) {
+						onAnswer(prompt.expandedOptions[0]);
+						return;
+					}
+
+					if (horizontal >= vertical && info.offset.x > 90) {
+						onAnswer(prompt.expandedOptions[1]);
+						return;
+					}
+
+					if (vertical > horizontal && info.offset.y > 90) {
+						onAnswer(prompt.expandedOptions[2]);
+						return;
+					}
+
+					if (horizontal >= vertical && info.offset.x < -90) {
+						onAnswer(prompt.expandedOptions[3]);
 						return;
 					}
 
@@ -535,25 +554,20 @@ function FlagCard({
 				/>
 
 				<div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
+					<span className="rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-700">
+						{prompt.card.region}
+					</span>
 					{prompt.source === "review" ? (
-						<span className="rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-700">
+						<span className="rounded-full bg-slate-950/88 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
 							Review
 						</span>
-					) : (
-						<span />
-					)}
-
-					<span className="rounded-full bg-slate-950/88 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
-						{prompt.isExpanded ? "4 choices" : "2 choices"}
-					</span>
+					) : null}
 				</div>
 
-				{!prompt.isExpanded ? (
-					<div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white">
-						<span className="rounded-full bg-slate-950/72 px-3 py-2">Left</span>
-						<span className="rounded-full bg-slate-950/72 px-3 py-2">Right</span>
-					</div>
-				) : null}
+				<div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white">
+					<span className="rounded-full bg-slate-950/72 px-3 py-2">Left</span>
+					<span className="rounded-full bg-slate-950/72 px-3 py-2">Right</span>
+				</div>
 			</motion.div>
 		</div>
 	);
@@ -616,7 +630,9 @@ function SummaryScreen({
 	);
 }
 
-function MiniStat({ label, value }: { label: string; value: number }) {
+const DIRECTION_LABELS = ["Up", "Right", "Down", "Left"] as const;
+
+function MiniStat({ label, value }: { label: string; value: number | string }) {
 	return (
 		<div className="rounded-full bg-white px-4 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
 			<p className="text-[11px] uppercase tracking-[0.18em] text-stone-400">{label}</p>
