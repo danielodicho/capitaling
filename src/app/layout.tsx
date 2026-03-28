@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const bodyFont = Space_Grotesk({
+	subsets: ["latin"],
+	variable: "--font-body",
+});
+
+const displayFont = Fraunces({
+	subsets: ["latin"],
+	variable: "--font-display",
+});
 
 export const metadata: Metadata = {
 	title: "Capitaling",
-	description: "Guess country and city!",
+	description: "A swipe-first geography game for learning world capitals from flags.",
 };
 
 export default function RootLayout({
@@ -16,7 +24,7 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="en">
-			<body className={inter.className}>{children}</body>
+			<body className={`${bodyFont.variable} ${displayFont.variable}`}>{children}</body>
 		</html>
 	);
 }

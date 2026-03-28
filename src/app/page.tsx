@@ -1,11 +1,7 @@
-import countriesData from "../data"; // Import the countries data
-import Game from "@components/Game";
-import getRandomIndices from "@utils/getRandomIndices";
+import GameShell from "@/components/game-shell";
 
 export default function Page() {
-  return <Game />;
+	return <GameShell />;
 }
 
-export const dynamic = "force-dynamic";
-
-export type SimilarCountriesAndCitiesIndices = { similarCountriesIndices: number[]; similarCitiesIndices: number[] }[];
+export const dynamic = "force-static";
