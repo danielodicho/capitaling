@@ -21,6 +21,8 @@ const cards: CountryCard[] = [
 		region: "Europe",
 		subregion: "Southeast Europe",
 		flagPath: "/images/svg/hr.svg",
+		location: { lat: 45.1, lng: 15.2 },
+		countryShapeId: "191",
 	},
 	{
 		code: "si",
@@ -29,6 +31,8 @@ const cards: CountryCard[] = [
 		region: "Europe",
 		subregion: "Southeast Europe",
 		flagPath: "/images/svg/si.svg",
+		location: { lat: 46.1, lng: 14.8 },
+		countryShapeId: "705",
 	},
 	{
 		code: "at",
@@ -37,6 +41,8 @@ const cards: CountryCard[] = [
 		region: "Europe",
 		subregion: "Central Europe",
 		flagPath: "/images/svg/at.svg",
+		location: { lat: 47.5, lng: 14.6 },
+		countryShapeId: "040",
 	},
 	{
 		code: "hu",
@@ -45,6 +51,8 @@ const cards: CountryCard[] = [
 		region: "Europe",
 		subregion: "Central Europe",
 		flagPath: "/images/svg/hu.svg",
+		location: { lat: 47.1, lng: 19.5 },
+		countryShapeId: "348",
 	},
 	{
 		code: "sk",
@@ -53,6 +61,8 @@ const cards: CountryCard[] = [
 		region: "Europe",
 		subregion: "Central Europe",
 		flagPath: "/images/svg/sk.svg",
+		location: { lat: 48.7, lng: 19.7 },
+		countryShapeId: "703",
 	},
 ];
 
